@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_Parse(t *testing.T) {
+func TestParse(t *testing.T) {
 	tests := []struct {
 		name     string
 		schedule string
@@ -181,6 +181,48 @@ func Test_Parse(t *testing.T) {
 		{
 			name:     "error - value over max",
 			schedule: "* * 100 * *",
+			want:     nil,
+			wantErr:  true,
+		},
+		{
+			name:     "error - non numeric cron part",
+			schedule: "cat cat cat cat cat",
+			want:     nil,
+			wantErr:  true,
+		},
+		{
+			name:     "error - non numeric lower range part",
+			schedule: "* * cat-4 * *",
+			want:     nil,
+			wantErr:  true,
+		},
+		{
+			name:     "error - non numeric upper range part",
+			schedule: "* * 4-cat * *",
+			want:     nil,
+			wantErr:  true,
+		},
+		{
+			name:     "error - non numeric lower step part",
+			schedule: "* * cat/4 * *",
+			want:     nil,
+			wantErr:  true,
+		},
+		{
+			name:     "error - non numeric upper step part",
+			schedule: "* 4/cat * * *",
+			want:     nil,
+			wantErr:  true,
+		},
+		{
+			name:     "error - non numeric step part",
+			schedule: "* * * * cat,4",
+			want:     nil,
+			wantErr:  true,
+		},
+		{
+			name:     "error - non numeric step part",
+			schedule: "* * * * cat,4",
 			want:     nil,
 			wantErr:  true,
 		},

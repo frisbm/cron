@@ -120,7 +120,7 @@ func parseCronPart(cronPart string, min, max uint8) ([]uint8, error) {
 		}
 
 		ranges := splitRange(stepItem)
-		var localMin, localMax = min, max
+		var toi8, localMin, localMax uint8
 		if len(ranges) == 2 {
 			localMin, err = aToi8(ranges[0], min, max)
 			if err != nil {
@@ -130,28 +130,24 @@ func parseCronPart(cronPart string, min, max uint8) ([]uint8, error) {
 			if err != nil {
 				return nil, err
 			}
+			timeSet.Add(rangeSlice(localMin, localMax, step)...)
 		} else if stepItem == "*" {
 			timeSet.Add(rangeSlice(min, max, step)...)
 			continue
 		} else {
-			toi8, err := aToi8(ranges[0], min, max)
+			toi8, err = aToi8(ranges[0], min, max)
 			if err != nil {
 				return nil, err
 			}
 			timeSet.Add(toi8)
 			continue
 		}
-		timeSet.Add(rangeSlice(localMin, localMax, step)...)
-		continue
 	}
 
 	return timeSet.Values(), nil
 }
 
 func rangeSlice(start, end, step uint8) []uint8 {
-	if end < start {
-		return nil
-	}
 	length := end - start
 	vals := make([]uint8, 0, length)
 	for i := start; i <= end; i++ {
@@ -165,7 +161,7 @@ func rangeSlice(start, end, step uint8) []uint8 {
 func aToi8(a string, min, max uint8) (uint8, error) {
 	i, err := strconv.Atoi(a)
 	if err != nil {
-		return 0, nil
+		return 0, err
 	}
 	val := uint8(i)
 	if val < min || val > max {
