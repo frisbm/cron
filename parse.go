@@ -7,6 +7,24 @@ import (
 	"sync"
 )
 
+/*
+Parse takes a standard cron schedule (* * * * *) and returns
+a Cron object if the schedule is valid; otherwise, it returns an error.
+It uses goroutines to parse each part of the schedule concurrently, resulting
+in faster parsing.
+
+The schedule follows the standard format:
+
+* [0-59] (* , / -)
+
+* [0-23] (* , / -)
+
+* [1-31] (* , / -)
+
+* [1-12] (* , / -)
+
+* [0-6]  (* , / -)
+*/
 func Parse(schedule string) (*Cron, error) {
 	if schedule == "" {
 		return nil, EmptyCronSchedule

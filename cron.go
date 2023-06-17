@@ -5,6 +5,9 @@ import (
 	"time"
 )
 
+/*
+Cron represents the cron schedule
+*/
 type Cron struct {
 	minute    []uint8
 	hour      []uint8
@@ -14,10 +17,17 @@ type Cron struct {
 	utc       bool
 }
 
+/*
+UseLocal will set the cron schedule calculations to use
+the local time of the system it is running on
+*/
 func (c *Cron) UseLocal() {
 	c.utc = false
 }
 
+/*
+NextFrom accepts a time in which it will calculate the next activation time after
+*/
 func (c *Cron) NextFrom(from time.Time) time.Time {
 	if c.utc {
 		from = from.UTC()
@@ -39,14 +49,23 @@ func (c *Cron) NextFrom(from time.Time) time.Time {
 	return nextTime
 }
 
+/*
+Next will return the next cron activation after now
+*/
 func (c *Cron) Next() time.Time {
 	return c.NextFrom(c.now())
 }
 
+/*
+Prev will return the previous cron activation before now
+*/
 func (c *Cron) Prev() time.Time {
 	return c.PrevBefore(c.now())
 }
 
+/*
+PrevBefore accepts a time in which it will calculate the previous activation time before now
+*/
 func (c *Cron) PrevBefore(before time.Time) time.Time {
 	if c.utc {
 		before = before.UTC()
@@ -68,6 +87,9 @@ func (c *Cron) PrevBefore(before time.Time) time.Time {
 	return prevTime
 }
 
+/*
+Now will tell you it is currently time for a cron schedule to activate
+*/
 func (c *Cron) Now() bool {
 	now := c.now()
 	if c.utc {
