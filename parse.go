@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 
 func Parse(schedule string) (*Cron, error) {
@@ -19,10 +18,10 @@ func Parse(schedule string) (*Cron, error) {
 	}
 
 	var wg sync.WaitGroup
-	var mu *sync.RWMutex
+	var mu sync.RWMutex
 	var werr error
 	cron := &Cron{
-		location: time.UTC,
+		utc: true,
 	}
 
 	for i := 0; i < 5; i++ {
@@ -99,6 +98,10 @@ func splitRange(cronPart string) []string {
 }
 
 func parseCronPart(cronPart string, min, max uint8) ([]uint8, error) {
+	if cronPart == "" {
+		return nil, InvalidCronSchedule
+	}
+
 	timeSet := NewSet[uint8]()
 	var err error
 	list := splitList(cronPart)
@@ -107,7 +110,7 @@ func parseCronPart(cronPart string, min, max uint8) ([]uint8, error) {
 		stepItem := steps[0]
 		var step uint8 = 1
 		if len(steps) == 2 {
-			step, err = aToi8(steps[1])
+			step, err = aToi8(steps[1], min, max)
 			if err != nil {
 				return nil, err
 			}
@@ -119,11 +122,11 @@ func parseCronPart(cronPart string, min, max uint8) ([]uint8, error) {
 		ranges := splitRange(stepItem)
 		var localMin, localMax = min, max
 		if len(ranges) == 2 {
-			localMin, err = aToi8(ranges[0])
+			localMin, err = aToi8(ranges[0], min, max)
 			if err != nil {
 				return nil, err
 			}
-			localMax, err = aToi8(ranges[1])
+			localMax, err = aToi8(ranges[1], min, max)
 			if err != nil {
 				return nil, err
 			}
@@ -131,7 +134,7 @@ func parseCronPart(cronPart string, min, max uint8) ([]uint8, error) {
 			timeSet.Add(rangeSlice(min, max, step)...)
 			continue
 		} else {
-			toi8, err := aToi8(ranges[0])
+			toi8, err := aToi8(ranges[0], min, max)
 			if err != nil {
 				return nil, err
 			}
@@ -159,10 +162,14 @@ func rangeSlice(start, end, step uint8) []uint8 {
 	return vals
 }
 
-func aToi8(a string) (uint8, error) {
+func aToi8(a string, min, max uint8) (uint8, error) {
 	i, err := strconv.Atoi(a)
 	if err != nil {
 		return 0, nil
 	}
-	return uint8(i), nil
+	val := uint8(i)
+	if val < min || val > max {
+		return 0, InvalidCronSchedule
+	}
+	return val, nil
 }

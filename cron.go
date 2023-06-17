@@ -8,7 +8,7 @@ type Cron struct {
 	day       []uint8
 	month     []uint8
 	dayOfWeek []uint8
-	location  *time.Location
+	utc       bool
 }
 
 func (c *Cron) UseLocal() {
