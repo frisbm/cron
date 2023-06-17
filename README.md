@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	cron, err := cron.Parse("* * * * ")
+	cron, err := cron.Parse("* * * * *")
 	if err != nil {
 		log.Fatal(err)
 	}
