@@ -148,6 +148,9 @@ func parseCronPart(cronPart string, min, max uint8) ([]uint8, error) {
 			if err != nil {
 				return nil, err
 			}
+			if localMin > localMax {
+				return nil, errors.New("range min cannot be greater than range max")
+			}
 			timeSet.Add(rangeSlice(localMin, localMax, step)...)
 		} else if stepItem == "*" {
 			timeSet.Add(rangeSlice(min, max, step)...)
