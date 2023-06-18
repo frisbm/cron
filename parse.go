@@ -36,8 +36,7 @@ func Parse(schedule string) (*Cron, error) {
 	}
 
 	var wg sync.WaitGroup
-	var mu sync.RWMutex
-	var werr error
+	errCh := make(chan error, 5)
 	cron := &Cron{
 		utc: true,
 	}
@@ -46,73 +45,34 @@ func Parse(schedule string) (*Cron, error) {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
+			var err error
 			switch i {
 			case 0:
-				minute, err := parseCronPart(cronParts[i], 0, 59)
-				if err != nil {
-					mu.Lock()
-					werr = errors.Join(werr, err)
-					mu.Unlock()
-					return
-				}
-				cron.minute = minute
+				cron.minute, err = parseCronPart(cronParts[i], 0, 59)
 			case 1:
-				hour, err := parseCronPart(cronParts[i], 0, 23)
-				if err != nil {
-					mu.Lock()
-					werr = errors.Join(werr, err)
-					mu.Unlock()
-					return
-				}
-				cron.hour = hour
+				cron.hour, err = parseCronPart(cronParts[i], 0, 23)
 			case 2:
-				day, err := parseCronPart(cronParts[i], 1, 31)
-				if err != nil {
-					mu.Lock()
-					werr = errors.Join(werr, err)
-					mu.Unlock()
-					return
-				}
-				cron.day = day
+				cron.day, err = parseCronPart(cronParts[i], 1, 31)
 			case 3:
-				month, err := parseCronPart(cronParts[i], 1, 12)
-				if err != nil {
-					mu.Lock()
-					werr = errors.Join(werr, err)
-					mu.Unlock()
-					return
-				}
-				cron.month = month
+				cron.month, err = parseCronPart(cronParts[i], 1, 12)
 			case 4:
-				dayOfWeek, err := parseCronPart(cronParts[i], 0, 6)
-				if err != nil {
-					mu.Lock()
-					werr = errors.Join(werr, err)
-					mu.Unlock()
-					return
-				}
-				cron.dayOfWeek = dayOfWeek
+				cron.dayOfWeek, err = parseCronPart(cronParts[i], 0, 6)
+			}
+			if err != nil {
+				errCh <- err
 			}
 		}(i)
 	}
 	wg.Wait()
 
-	if werr != nil {
-		return nil, errors.Join(InvalidCronSchedule, werr)
+	close(errCh)
+
+	for err := range errCh {
+		if err != nil {
+			return nil, errors.Join(InvalidCronSchedule, err)
+		}
 	}
 	return cron, nil
-}
-
-func splitList(cronPart string) []string {
-	return strings.Split(cronPart, ",")
-}
-
-func splitStep(cronPart string) []string {
-	return strings.Split(cronPart, "/")
-}
-
-func splitRange(cronPart string) []string {
-	return strings.Split(cronPart, "-")
 }
 
 func parseCronPart(cronPart string, min, max uint8) ([]uint8, error) {
@@ -122,11 +82,11 @@ func parseCronPart(cronPart string, min, max uint8) ([]uint8, error) {
 
 	timeSet := newSet[uint8]()
 	var err error
-	list := splitList(cronPart)
+	list := strings.Split(cronPart, ",")
 	for _, listItem := range list {
-		steps := splitStep(listItem)
+		steps := strings.Split(listItem, "/")
 		stepItem := steps[0]
-		var step uint8 = 1
+		step := uint8(1)
 		if len(steps) == 2 {
 			step, err = aToi8(steps[1], min, max)
 			if err != nil {
@@ -137,7 +97,7 @@ func parseCronPart(cronPart string, min, max uint8) ([]uint8, error) {
 			continue
 		}
 
-		ranges := splitRange(stepItem)
+		ranges := strings.Split(stepItem, "-")
 		var toi8, localMin, localMax uint8
 		if len(ranges) == 2 {
 			localMin, err = aToi8(ranges[0], min, max)
@@ -169,7 +129,7 @@ func parseCronPart(cronPart string, min, max uint8) ([]uint8, error) {
 }
 
 func rangeSlice(start, end, step uint8) []uint8 {
-	length := end - start
+	length := ((end - start) / step) + 1
 	vals := make([]uint8, 0, length)
 	for i := start; i <= end; i++ {
 		if i%step == 0 {
@@ -180,11 +140,11 @@ func rangeSlice(start, end, step uint8) []uint8 {
 }
 
 func aToi8(a string, min, max uint8) (uint8, error) {
-	i, err := strconv.Atoi(a)
+	parsed, err := strconv.ParseUint(a, 10, 8)
 	if err != nil {
 		return 0, err
 	}
-	val := uint8(i)
+	val := uint8(parsed)
 	if val < min || val > max {
 		return 0, InvalidCronSchedule
 	}
