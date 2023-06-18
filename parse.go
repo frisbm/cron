@@ -120,7 +120,7 @@ func parseCronPart(cronPart string, min, max uint8) ([]uint8, error) {
 		return nil, InvalidCronSchedule
 	}
 
-	timeSet := NewSet[uint8]()
+	timeSet := newSet[uint8]()
 	var err error
 	list := splitList(cronPart)
 	for _, listItem := range list {
