@@ -84,7 +84,7 @@ func parseCronPart(cronPart string, min, max uint8) (set[uint8], error) {
 	}
 
 	if cronPart == "*" {
-		timeSet.Add(rangeSlice(min, max, 1, offset)...)
+		timeSet.add(rangeSlice(min, max, 1, offset)...)
 		return timeSet, nil
 	}
 
@@ -100,7 +100,7 @@ func parseCronPart(cronPart string, min, max uint8) (set[uint8], error) {
 			}
 		}
 		if steps[0] == "*" {
-			timeSet.Add(rangeSlice(min, max, step, offset)...)
+			timeSet.add(rangeSlice(min, max, step, offset)...)
 			continue
 		}
 
@@ -118,7 +118,7 @@ func parseCronPart(cronPart string, min, max uint8) (set[uint8], error) {
 			if localMin > localMax {
 				return set[uint8]{}, errors.New("range min cannot be greater than range max")
 			}
-			timeSet.Add(rangeSlice(localMin, localMax, step, offset)...)
+			timeSet.add(rangeSlice(localMin, localMax, step, offset)...)
 			continue
 		}
 
@@ -126,7 +126,7 @@ func parseCronPart(cronPart string, min, max uint8) (set[uint8], error) {
 		if err != nil {
 			return set[uint8]{}, err
 		}
-		timeSet.Add(toi8)
+		timeSet.add(toi8)
 	}
 
 	return timeSet, nil

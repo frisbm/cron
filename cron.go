@@ -90,11 +90,11 @@ func (c *Cron) Now() bool {
 }
 
 func (c *Cron) isTime(time time.Time) bool {
-	if c.minute.Contains(uint8(time.Minute())) &&
-		c.hour.Contains(uint8(time.Hour())) &&
-		c.day.Contains(uint8(time.Day())) &&
-		c.month.Contains(uint8(time.Month())) &&
-		c.dayOfWeek.Contains(uint8(time.Weekday())) {
+	if c.minute.contains(uint8(time.Minute())) &&
+		c.hour.contains(uint8(time.Hour())) &&
+		c.day.contains(uint8(time.Day())) &&
+		c.month.contains(uint8(time.Month())) &&
+		c.dayOfWeek.contains(uint8(time.Weekday())) {
 		return true
 	}
 	return false

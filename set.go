@@ -12,17 +12,17 @@ func newSet[T constraints.Ordered](capacity int, items ...T) set[T] {
 	s := set[T]{
 		items: make(map[T]struct{}, capacity),
 	}
-	s.Add(items...)
+	s.add(items...)
 	return s
 }
 
-func (s set[T]) Add(items ...T) {
+func (s set[T]) add(items ...T) {
 	for _, item := range items {
 		s.items[item] = struct{}{}
 	}
 }
 
-func (s set[T]) Contains(key T) bool {
+func (s set[T]) contains(key T) bool {
 	_, ok := s.items[key]
 	return ok
 }
