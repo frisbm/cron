@@ -8,11 +8,11 @@ import (
 Cron represents the cron schedule
 */
 type Cron struct {
-	minute    *set[uint8]
-	hour      *set[uint8]
-	day       *set[uint8]
-	month     *set[uint8]
-	dayOfWeek *set[uint8]
+	minute    set[uint8]
+	hour      set[uint8]
+	day       set[uint8]
+	month     set[uint8]
+	dayOfWeek set[uint8]
 	utc       bool
 }
 

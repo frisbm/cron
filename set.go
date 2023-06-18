@@ -8,8 +8,8 @@ type set[T constraints.Ordered] struct {
 	items map[T]struct{}
 }
 
-func newSet[T constraints.Ordered](capacity int, items ...T) *set[T] {
-	s := &set[T]{
+func newSet[T constraints.Ordered](capacity int, items ...T) set[T] {
+	s := set[T]{
 		items: make(map[T]struct{}, capacity),
 	}
 	s.Add(items...)

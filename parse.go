@@ -75,12 +75,13 @@ func Parse(schedule string) (*Cron, error) {
 	return cron, nil
 }
 
-func parseCronPart(cronPart string, min, max uint8) (*set[uint8], error) {
+func parseCronPart(cronPart string, min, max uint8) (set[uint8], error) {
+	timeSet := newSet[uint8](int(max))
+
 	if cronPart == "" {
-		return nil, InvalidCronSchedule
+		return timeSet, InvalidCronSchedule
 	}
 
-	timeSet := newSet[uint8](int(max))
 	var err error
 	list := strings.Split(cronPart, ",")
 	for _, listItem := range list {
@@ -90,7 +91,7 @@ func parseCronPart(cronPart string, min, max uint8) (*set[uint8], error) {
 		if len(steps) == 2 {
 			step, err = aToi8(steps[1], min, max)
 			if err != nil {
-				return nil, err
+				return set[uint8]{}, err
 			}
 		} else if stepItem == "*" {
 			timeSet.Add(rangeSlice(min, max, step)...)
@@ -102,14 +103,14 @@ func parseCronPart(cronPart string, min, max uint8) (*set[uint8], error) {
 		if len(ranges) == 2 {
 			localMin, err = aToi8(ranges[0], min, max)
 			if err != nil {
-				return nil, err
+				return set[uint8]{}, err
 			}
 			localMax, err = aToi8(ranges[1], min, max)
 			if err != nil {
-				return nil, err
+				return set[uint8]{}, err
 			}
 			if localMin > localMax {
-				return nil, errors.New("range min cannot be greater than range max")
+				return set[uint8]{}, errors.New("range min cannot be greater than range max")
 			}
 			timeSet.Add(rangeSlice(localMin, localMax, step)...)
 		} else if stepItem == "*" {
@@ -118,7 +119,7 @@ func parseCronPart(cronPart string, min, max uint8) (*set[uint8], error) {
 		} else {
 			toi8, err = aToi8(ranges[0], min, max)
 			if err != nil {
-				return nil, err
+				return set[uint8]{}, err
 			}
 			timeSet.Add(toi8)
 			continue
