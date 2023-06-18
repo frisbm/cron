@@ -28,3 +28,6 @@ func main() {
 ```
 
 See package documentation [here](https://pkg.go.dev/github.com/frisbm/cron)
+
+### Example
+See an example cron scheduler service in [scheduler module](./scheduler/scheduler.go)
