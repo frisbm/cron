@@ -70,8 +70,8 @@ func TestParse(t *testing.T) {
 			want: &Cron{
 				minute:    newSet[uint8](60, 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55),
 				hour:      newSet[uint8](60, 0, 5, 10, 15, 20),
-				day:       newSet[uint8](60, 5, 10, 15, 20, 25, 30),
-				month:     newSet[uint8](60, 5, 10),
+				day:       newSet[uint8](60, 1, 6, 11, 16, 21, 26, 31),
+				month:     newSet[uint8](60, 1, 6, 11),
 				dayOfWeek: newSet[uint8](60, 0, 5),
 				utc:       true,
 			},
@@ -96,21 +96,8 @@ func TestParse(t *testing.T) {
 			want: &Cron{
 				minute:    newSet[uint8](60, 2, 4),
 				hour:      newSet[uint8](60, 2, 4),
-				day:       newSet[uint8](60, 2, 4),
-				month:     newSet[uint8](60, 2, 4),
-				dayOfWeek: newSet[uint8](60, 2, 4),
-				utc:       true,
-			},
-			wantErr: false,
-		},
-		{
-			name:     "range with step cron",
-			schedule: "1-4/2 1-4/2 1-4/2 1-4/2 1-4/2",
-			want: &Cron{
-				minute:    newSet[uint8](60, 2, 4),
-				hour:      newSet[uint8](60, 2, 4),
-				day:       newSet[uint8](60, 2, 4),
-				month:     newSet[uint8](60, 2, 4),
+				day:       newSet[uint8](60, 1, 3),
+				month:     newSet[uint8](60, 1, 3),
 				dayOfWeek: newSet[uint8](60, 2, 4),
 				utc:       true,
 			},
@@ -122,8 +109,8 @@ func TestParse(t *testing.T) {
 			want: &Cron{
 				minute:    newSet[uint8](60, 0, 1, 2, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55),
 				hour:      newSet[uint8](60, 0, 1, 2, 5, 10, 15, 20),
-				day:       newSet[uint8](60, 1, 2, 5, 10, 15, 20, 25, 30),
-				month:     newSet[uint8](60, 1, 2, 5, 10),
+				day:       newSet[uint8](60, 1, 2, 6, 11, 16, 21, 26, 31),
+				month:     newSet[uint8](60, 1, 2, 6, 11),
 				dayOfWeek: newSet[uint8](60, 0, 1, 2, 5),
 				utc:       true,
 			},
@@ -135,8 +122,8 @@ func TestParse(t *testing.T) {
 			want: &Cron{
 				minute:    newSet[uint8](60, 0, 1, 2, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55),
 				hour:      newSet[uint8](60, 0, 1, 2, 5, 10, 15, 20),
-				day:       newSet[uint8](60, 1, 2, 5, 10, 15, 20, 25, 30),
-				month:     newSet[uint8](60, 1, 2, 5, 10),
+				day:       newSet[uint8](60, 1, 2, 6, 11, 16, 21, 26, 31),
+				month:     newSet[uint8](60, 1, 2, 6, 11),
 				dayOfWeek: newSet[uint8](60, 0, 1, 2, 5),
 				utc:       true,
 			},
@@ -245,3 +232,20 @@ func TestParse(t *testing.T) {
 		})
 	}
 }
+
+var result *Cron
+
+func benchmarkParse(schedule string, b *testing.B) {
+	var c *Cron
+	for n := 0; n < b.N; n++ {
+		c, _ = Parse(schedule)
+	}
+	result = c
+}
+
+func BenchmarkParse_Base(b *testing.B)   { benchmarkParse("* * * * *", b) }
+func BenchmarkParse_Simple(b *testing.B) { benchmarkParse("1 1 1 1 1", b) }
+func BenchmarkParse_List(b *testing.B)   { benchmarkParse("1,2 1,2 1,2 1,2 1,2", b) }
+func BenchmarkParse_Step(b *testing.B)   { benchmarkParse("*/5 */5 */5 */5 */5", b) }
+func BenchmarkParse_Range(b *testing.B)  { benchmarkParse("1-5 1-5 1-5 1-5 1-5", b) }
+func BenchmarkParse_All(b *testing.B)    { benchmarkParse("1-2,*/5 1-2,*/5 1-2,*/5 1-2,*/5 1-2,*/5", b) }

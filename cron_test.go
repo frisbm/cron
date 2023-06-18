@@ -1,6 +1,7 @@
 package cron
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -52,6 +53,8 @@ func TestCron_Next(t *testing.T) {
 			cron, err := Parse(tt.schedule)
 			assert.NoError(t, err)
 			next := cron.Next()
+			fmt.Println(tt.want)
+			fmt.Println(next)
 			assert.True(t, tt.want.Equal(next))
 		})
 	}

@@ -77,28 +77,34 @@ func Parse(schedule string) (*Cron, error) {
 
 func parseCronPart(cronPart string, min, max uint8) (set[uint8], error) {
 	timeSet := newSet[uint8](int(max))
+	offset := min == 1
 
 	if cronPart == "" {
 		return timeSet, InvalidCronSchedule
 	}
 
+	if cronPart == "*" {
+		timeSet.Add(rangeSlice(min, max, 1, offset)...)
+		return timeSet, nil
+	}
+
 	var err error
 	list := strings.Split(cronPart, ",")
-	for _, listItem := range list {
-		steps := strings.Split(listItem, "/")
-		stepItem := steps[0]
+	for _, item := range list {
+		steps := strings.Split(item, "/")
 		step := uint8(1)
 		if len(steps) == 2 {
 			step, err = aToi8(steps[1], min, max)
 			if err != nil {
 				return set[uint8]{}, err
 			}
-		} else if stepItem == "*" {
-			timeSet.Add(rangeSlice(min, max, step)...)
+		}
+		if steps[0] == "*" {
+			timeSet.Add(rangeSlice(min, max, step, offset)...)
 			continue
 		}
 
-		ranges := strings.Split(stepItem, "-")
+		ranges := strings.Split(steps[0], "-")
 		var toi8, localMin, localMax uint8
 		if len(ranges) == 2 {
 			localMin, err = aToi8(ranges[0], min, max)
@@ -112,29 +118,34 @@ func parseCronPart(cronPart string, min, max uint8) (set[uint8], error) {
 			if localMin > localMax {
 				return set[uint8]{}, errors.New("range min cannot be greater than range max")
 			}
-			timeSet.Add(rangeSlice(localMin, localMax, step)...)
-		} else if stepItem == "*" {
-			timeSet.Add(rangeSlice(min, max, step)...)
-			continue
-		} else {
-			toi8, err = aToi8(ranges[0], min, max)
-			if err != nil {
-				return set[uint8]{}, err
-			}
-			timeSet.Add(toi8)
+			timeSet.Add(rangeSlice(localMin, localMax, step, offset)...)
 			continue
 		}
+
+		toi8, err = aToi8(ranges[0], min, max)
+		if err != nil {
+			return set[uint8]{}, err
+		}
+		timeSet.Add(toi8)
 	}
 
 	return timeSet, nil
 }
 
-func rangeSlice(start, end, step uint8) []uint8 {
+func rangeSlice(start, end, step uint8, offset bool) []uint8 {
+	if offset {
+		start--
+		end--
+	}
 	length := ((end - start) / step) + 1
 	vals := make([]uint8, 0, length)
 	for i := start; i <= end; i++ {
 		if i%step == 0 {
-			vals = append(vals, i)
+			val := i
+			if offset {
+				val++
+			}
+			vals = append(vals, val)
 		}
 	}
 	return vals
