@@ -75,12 +75,12 @@ func Parse(schedule string) (*Cron, error) {
 	return cron, nil
 }
 
-func parseCronPart(cronPart string, min, max uint8) ([]uint8, error) {
+func parseCronPart(cronPart string, min, max uint8) (*set[uint8], error) {
 	if cronPart == "" {
 		return nil, InvalidCronSchedule
 	}
 
-	timeSet := newSet[uint8]()
+	timeSet := newSet[uint8](int(max))
 	var err error
 	list := strings.Split(cronPart, ",")
 	for _, listItem := range list {
@@ -125,7 +125,7 @@ func parseCronPart(cronPart string, min, max uint8) ([]uint8, error) {
 		}
 	}
 
-	return timeSet.Values(), nil
+	return timeSet, nil
 }
 
 func rangeSlice(start, end, step uint8) []uint8 {

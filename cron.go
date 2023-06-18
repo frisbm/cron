@@ -1,7 +1,6 @@
 package cron
 
 import (
-	"golang.org/x/exp/slices"
 	"time"
 )
 
@@ -9,11 +8,11 @@ import (
 Cron represents the cron schedule
 */
 type Cron struct {
-	minute    []uint8
-	hour      []uint8
-	day       []uint8
-	month     []uint8
-	dayOfWeek []uint8
+	minute    *set[uint8]
+	hour      *set[uint8]
+	day       *set[uint8]
+	month     *set[uint8]
+	dayOfWeek *set[uint8]
 	utc       bool
 }
 
@@ -35,11 +34,7 @@ func (c *Cron) NextFrom(from time.Time) time.Time {
 	nextTime := from.Add(time.Minute)
 
 	for {
-		if slices.Contains(c.minute, uint8(nextTime.Minute())) &&
-			slices.Contains(c.hour, uint8(nextTime.Hour())) &&
-			slices.Contains(c.day, uint8(nextTime.Day())) &&
-			slices.Contains(c.month, uint8(nextTime.Month())) &&
-			slices.Contains(c.dayOfWeek, uint8(nextTime.Weekday())) {
+		if c.isTime(nextTime) {
 			break
 		}
 
@@ -73,11 +68,7 @@ func (c *Cron) PrevBefore(before time.Time) time.Time {
 	prevTime := before.Add(-1 * time.Minute)
 
 	for {
-		if slices.Contains(c.minute, uint8(prevTime.Minute())) &&
-			slices.Contains(c.hour, uint8(prevTime.Hour())) &&
-			slices.Contains(c.day, uint8(prevTime.Day())) &&
-			slices.Contains(c.month, uint8(prevTime.Month())) &&
-			slices.Contains(c.dayOfWeek, uint8(prevTime.Weekday())) {
+		if c.isTime(prevTime) {
 			break
 		}
 
@@ -95,28 +86,18 @@ func (c *Cron) Now() bool {
 	if c.utc {
 		now = now.UTC()
 	}
+	return c.isTime(now)
+}
 
-	if !slices.Contains(c.minute, uint8(now.Minute())) {
-		return false
+func (c *Cron) isTime(time time.Time) bool {
+	if c.minute.Contains(uint8(time.Minute())) &&
+		c.hour.Contains(uint8(time.Hour())) &&
+		c.day.Contains(uint8(time.Day())) &&
+		c.month.Contains(uint8(time.Month())) &&
+		c.dayOfWeek.Contains(uint8(time.Weekday())) {
+		return true
 	}
-
-	if !slices.Contains(c.hour, uint8(now.Hour())) {
-		return false
-	}
-
-	if !slices.Contains(c.day, uint8(now.Day())) {
-		return false
-	}
-
-	if !slices.Contains(c.month, uint8(now.Month())) {
-		return false
-	}
-
-	if !slices.Contains(c.dayOfWeek, uint8(now.Weekday())) {
-		return false
-	}
-
-	return true
+	return false
 }
 
 var timeNow = time.Now
