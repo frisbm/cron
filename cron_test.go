@@ -124,6 +124,11 @@ func TestCron_Now(t *testing.T) {
 			want:     true,
 		},
 		{
+			name:     "is now - exact",
+			schedule: "23 18 17 6 6",
+			want:     true,
+		},
+		{
 			name:     "is not now - min",
 			schedule: "5 * * * *",
 			want:     false,
