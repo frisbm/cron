@@ -7,6 +7,30 @@ import (
 	"time"
 )
 
+func TestCron_UseLocal(t *testing.T) {
+	tests := []struct {
+		name     string
+		schedule string
+	}{
+		{
+			name:     "use local",
+			schedule: "* * * * *",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			timeNow = func() time.Time {
+				return time.Now().Local()
+			}
+			cron, err := Parse(tt.schedule)
+			assert.NoError(t, err)
+			cron.UseLocal()
+			assert.Equal(t, timeNow().Location(), cron.now().Location())
+			assert.True(t, timeNow().Truncate(1*time.Minute).Equal(cron.now()))
+		})
+	}
+}
+
 func TestCron_Next(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -167,26 +191,20 @@ func TestCron_Now(t *testing.T) {
 	}
 }
 
-func TestCron_UseLocal(t *testing.T) {
-	tests := []struct {
-		name     string
-		schedule string
-	}{
-		{
-			name:     "use local",
-			schedule: "* * * * *",
-		},
+var result *Cron
+
+func benchmarkNow(schedule string, b *testing.B) {
+	var c *Cron
+	for n := 0; n < b.N; n++ {
+		c, _ = Parse(schedule)
+		_ = c.Now()
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			timeNow = func() time.Time {
-				return time.Now().Local()
-			}
-			cron, err := Parse(tt.schedule)
-			assert.NoError(t, err)
-			cron.UseLocal()
-			assert.Equal(t, timeNow().Location(), cron.now().Location())
-			assert.True(t, timeNow().Truncate(1*time.Minute).Equal(cron.now()))
-		})
-	}
+	result = c
 }
+
+func BenchmarkNow_Base(b *testing.B)   { benchmarkNow("* * * * *", b) }
+func BenchmarkNow_Simple(b *testing.B) { benchmarkNow("1 1 1 1 1", b) }
+func BenchmarkNow_List(b *testing.B)   { benchmarkNow("1,2 1,2 1,2 1,2 1,2", b) }
+func BenchmarkNow_Step(b *testing.B)   { benchmarkNow("*/5 */5 */5 */5 */5", b) }
+func BenchmarkNow_Range(b *testing.B)  { benchmarkNow("1-5 1-5 1-5 1-5 1-5", b) }
+func BenchmarkNow_All(b *testing.B)    { benchmarkNow("1-2,*/5 1-2,*/5 1-2,*/5 1-2,*/5 1-2,*/5", b) }

@@ -232,20 +232,3 @@ func TestParse(t *testing.T) {
 		})
 	}
 }
-
-var result *Cron
-
-func benchmarkParse(schedule string, b *testing.B) {
-	var c *Cron
-	for n := 0; n < b.N; n++ {
-		c, _ = Parse(schedule)
-	}
-	result = c
-}
-
-func BenchmarkParse_Base(b *testing.B)   { benchmarkParse("* * * * *", b) }
-func BenchmarkParse_Simple(b *testing.B) { benchmarkParse("1 1 1 1 1", b) }
-func BenchmarkParse_List(b *testing.B)   { benchmarkParse("1,2 1,2 1,2 1,2 1,2", b) }
-func BenchmarkParse_Step(b *testing.B)   { benchmarkParse("*/5 */5 */5 */5 */5", b) }
-func BenchmarkParse_Range(b *testing.B)  { benchmarkParse("1-5 1-5 1-5 1-5 1-5", b) }
-func BenchmarkParse_All(b *testing.B)    { benchmarkParse("1-2,*/5 1-2,*/5 1-2,*/5 1-2,*/5 1-2,*/5", b) }
