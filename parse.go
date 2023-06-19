@@ -12,7 +12,7 @@ type partType string
 const (
 	minute  partType = "minute"
 	hour    partType = "hour"
-	Day     partType = "day"
+	day     partType = "day"
 	month   partType = "month"
 	weekday partType = "weekday"
 )
@@ -65,7 +65,7 @@ func Parse(schedule string) (*Cron, error) {
 			case 1:
 				cron.hour, err = parseCronPart(cronParts[i], 0, 23, hour)
 			case 2:
-				cron.day, err = parseCronPart(cronParts[i], 1, 31, Day)
+				cron.day, err = parseCronPart(cronParts[i], 1, 31, day)
 			case 3:
 				cron.month, err = parseCronPart(cronParts[i], 1, 12, month)
 			case 4:
@@ -92,10 +92,10 @@ func Parse(schedule string) (*Cron, error) {
 // into an set of values to use in the Cron struct
 func parseCronPart(cronPart string, min, max uint8, part partType) (set[uint8], error) {
 	var err error
-	offset := 0
-	// Day & month start with 1 instead of 0
-	if part == Day || part == month {
-		offset = -1
+	var offset uint8 = 0
+	// day & month start with 1 instead of 0
+	if part == day || part == month {
+		offset = 1
 	}
 
 	timeSet := newSet[uint8](int(max))
@@ -169,23 +169,30 @@ func parseCronPart(cronPart string, min, max uint8, part partType) (set[uint8], 
 
 // rangeSlice takes a start, end, step, and offset value to
 // create a slice of uint8
-func rangeSlice(start, end, step uint8, offset int) []uint8 {
+func rangeSlice(start, end, step, offset uint8) []uint8 {
 	// Add the offset
-	start = uint8(int(start) + offset)
-	end = uint8(int(end) + offset)
+	start = start - offset
+	end = end - offset
+
+	// Find start & end divisible by step
+	{
+		// uint8 LTE to end that is div by step
+		end = (end - (end % step)) / step
+
+		// uint8 GTE to start that is div by step
+		startRem := (start + step) % step
+		if startRem != 0 {
+			start = start + step - startRem
+		}
+		start = start / step
+	}
 
 	// Able to calculate worst-case for the capacity of range slice
-	length := ((end - start) / step) + 1
-	result := make([]uint8, length)
-	idx := 0
+	result := make([]uint8, 0, end-start+1)
 	for i := start; i <= end; i++ {
-		// If 'i' is divisible by the step, add to return slice
-		if i%step == 0 {
-			// subtract the offset
-			result[idx] = uint8(int(i) - offset)
-			idx++
-		}
+		result = append(result, (i*step)+offset)
 	}
+
 	return result
 }
 
