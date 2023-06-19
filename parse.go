@@ -87,7 +87,10 @@ func Parse(schedule string) (*Cron, error) {
 
 func parseCronPart(cronPart string, min, max uint8, part PartType) (set[uint8], error) {
 	timeSet := newSet[uint8](int(max))
-	offset := part == Day || part == Month
+	offset := 0
+	if part == Day || part == Month {
+		offset = -1
+	}
 
 	if cronPart == "" {
 		return timeSet, InvalidCronSchedule
@@ -142,25 +145,30 @@ func parseCronPart(cronPart string, min, max uint8, part PartType) (set[uint8], 
 	return timeSet, nil
 }
 
-func rangeSlice(start, end, step uint8, offset bool) []uint8 {
-	if offset {
-		start--
-		end--
-	}
+// rangeSlice takes a start, end, step, and offset value to
+// create a slice of uint8
+func rangeSlice(start, end, step uint8, offset int) []uint8 {
+	// Add the offset
+	start = uint8(int(start) + offset)
+	end = uint8(int(end) + offset)
+
+	// Able to calculate worst-case for the capacity of range slice
 	length := ((end - start) / step) + 1
-	vals := make([]uint8, 0, length)
+	result := make([]uint8, 0, length)
+
 	for i := start; i <= end; i++ {
+		// If i is divisible by the step, add to return slice
 		if i%step == 0 {
-			val := i
-			if offset {
-				val++
-			}
-			vals = append(vals, val)
+			// subtract the offset
+			val := uint8(int(i) - offset)
+
+			result = append(result, val)
 		}
 	}
-	return vals
+	return result
 }
 
+// aToi8 attempts to convert a string into uint8 with vaidation
 func aToi8(a string, min, max uint8) (uint8, error) {
 	parsed, err := strconv.ParseUint(a, 10, 8)
 	if err != nil {
