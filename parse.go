@@ -7,14 +7,14 @@ import (
 	"sync"
 )
 
-type PartType string
+type partType string
 
 const (
-	Minute  PartType = "Minute"
-	Hour    PartType = "Hour"
-	Day     PartType = "Day"
-	Month   PartType = "Month"
-	Weekday PartType = "Weekday"
+	minute  partType = "minute"
+	hour    partType = "hour"
+	Day     partType = "day"
+	month   partType = "month"
+	weekday partType = "weekday"
 )
 
 /*
@@ -36,11 +36,13 @@ The schedule follows the standard format:
 * [0-6]  (* , / -)
 */
 func Parse(schedule string) (*Cron, error) {
+	// If schedule is empty, return error
 	if schedule == "" {
 		return nil, EmptyCronSchedule
 	}
 
 	cronParts := strings.Split(schedule, " ")
+	// If the length of all the parts after splitting is not 5, return error
 	if len(cronParts) != 5 {
 		return nil, InvalidCronSchedule
 	}
@@ -51,6 +53,7 @@ func Parse(schedule string) (*Cron, error) {
 		utc: true,
 	}
 
+	// Using sync.WaitGroup, we can parse the 5 parts independently and concurrently
 	for i := 0; i < 5; i++ {
 		wg.Add(1)
 		go func(i int) {
@@ -58,15 +61,15 @@ func Parse(schedule string) (*Cron, error) {
 			var err error
 			switch i {
 			case 0:
-				cron.minute, err = parseCronPart(cronParts[i], 0, 59, Minute)
+				cron.minute, err = parseCronPart(cronParts[i], 0, 59, minute)
 			case 1:
-				cron.hour, err = parseCronPart(cronParts[i], 0, 23, Hour)
+				cron.hour, err = parseCronPart(cronParts[i], 0, 23, hour)
 			case 2:
 				cron.day, err = parseCronPart(cronParts[i], 1, 31, Day)
 			case 3:
-				cron.month, err = parseCronPart(cronParts[i], 1, 12, Month)
+				cron.month, err = parseCronPart(cronParts[i], 1, 12, month)
 			case 4:
-				cron.weekday, err = parseCronPart(cronParts[i], 0, 6, Weekday)
+				cron.weekday, err = parseCronPart(cronParts[i], 0, 6, weekday)
 			}
 			if err != nil {
 				errCh <- err
@@ -85,40 +88,58 @@ func Parse(schedule string) (*Cron, error) {
 	return cron, nil
 }
 
-func parseCronPart(cronPart string, min, max uint8, part PartType) (set[uint8], error) {
-	timeSet := newSet[uint8](int(max))
+// parseCronPart does all the heavy lifting of turning a cron part
+// into an set of values to use in the Cron struct
+func parseCronPart(cronPart string, min, max uint8, part partType) (set[uint8], error) {
+	var err error
 	offset := 0
-	if part == Day || part == Month {
+	// Day & month start with 1 instead of 0
+	if part == Day || part == month {
 		offset = -1
 	}
 
+	timeSet := newSet[uint8](int(max))
+
+	// Simple Validation for empty cron part
 	if cronPart == "" {
 		return timeSet, InvalidCronSchedule
 	}
 
+	// Easiest case, if the cron part is only '*' that means get all values for that part
 	if cronPart == "*" {
 		timeSet.add(rangeSlice(min, max, 1, offset)...)
 		return timeSet, nil
 	}
 
-	var err error
+	// 1. Find & Split cron part list components, these are independent of each other
 	list := strings.Split(cronPart, ",")
+
+	// 2. Cycle through the list components
 	for _, item := range list {
+
+		// 3. Find and split Step Components
 		steps := strings.Split(item, "/")
 		step := uint8(1)
+
+		// 4. If part is a step component, save in step
 		if len(steps) == 2 {
 			step, err = aToi8(steps[1], min, max)
 			if err != nil {
 				return set[uint8]{}, err
 			}
 		}
+		// 5. If first part of split is * (i.e. */5) then we can create range slice and continue
 		if steps[0] == "*" {
 			timeSet.add(rangeSlice(min, max, step, offset)...)
 			continue
 		}
 
+		// 6. Find and split range component
 		ranges := strings.Split(steps[0], "-")
 		var toi8, localMin, localMax uint8
+
+		// 7. If part is a range component, find local min/max of the component,
+		// validate, and create range slice using the saved step from earlier
 		if len(ranges) == 2 {
 			localMin, err = aToi8(ranges[0], min, max)
 			if err != nil {
@@ -135,6 +156,7 @@ func parseCronPart(cronPart string, min, max uint8, part PartType) (set[uint8], 
 			continue
 		}
 
+		// 8. If part is simply an integer, convert to uint8 and add to timeSet
 		toi8, err = aToi8(ranges[0], min, max)
 		if err != nil {
 			return set[uint8]{}, err
@@ -154,15 +176,14 @@ func rangeSlice(start, end, step uint8, offset int) []uint8 {
 
 	// Able to calculate worst-case for the capacity of range slice
 	length := ((end - start) / step) + 1
-	result := make([]uint8, 0, length)
-
+	result := make([]uint8, length)
+	idx := 0
 	for i := start; i <= end; i++ {
-		// If i is divisible by the step, add to return slice
+		// If 'i' is divisible by the step, add to return slice
 		if i%step == 0 {
 			// subtract the offset
-			val := uint8(int(i) - offset)
-
-			result = append(result, val)
+			result[idx] = uint8(int(i) - offset)
+			idx++
 		}
 	}
 	return result
