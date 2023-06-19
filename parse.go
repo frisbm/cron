@@ -7,6 +7,16 @@ import (
 	"sync"
 )
 
+type PartType string
+
+const (
+	Minute  PartType = "Minute"
+	Hour    PartType = "Hour"
+	Day     PartType = "Day"
+	Month   PartType = "Month"
+	Weekday PartType = "Weekday"
+)
+
 /*
 Parse takes a standard cron schedule (* * * * *) and returns
 a Cron object if the schedule is valid; otherwise, it returns an error.
@@ -48,15 +58,15 @@ func Parse(schedule string) (*Cron, error) {
 			var err error
 			switch i {
 			case 0:
-				cron.minute, err = parseCronPart(cronParts[i], 0, 59)
+				cron.minute, err = parseCronPart(cronParts[i], 0, 59, Minute)
 			case 1:
-				cron.hour, err = parseCronPart(cronParts[i], 0, 23)
+				cron.hour, err = parseCronPart(cronParts[i], 0, 23, Hour)
 			case 2:
-				cron.day, err = parseCronPart(cronParts[i], 1, 31)
+				cron.day, err = parseCronPart(cronParts[i], 1, 31, Day)
 			case 3:
-				cron.month, err = parseCronPart(cronParts[i], 1, 12)
+				cron.month, err = parseCronPart(cronParts[i], 1, 12, Month)
 			case 4:
-				cron.weekday, err = parseCronPart(cronParts[i], 0, 6)
+				cron.weekday, err = parseCronPart(cronParts[i], 0, 6, Weekday)
 			}
 			if err != nil {
 				errCh <- err
@@ -75,9 +85,9 @@ func Parse(schedule string) (*Cron, error) {
 	return cron, nil
 }
 
-func parseCronPart(cronPart string, min, max uint8) (set[uint8], error) {
+func parseCronPart(cronPart string, min, max uint8, part PartType) (set[uint8], error) {
 	timeSet := newSet[uint8](int(max))
-	offset := min == 1
+	offset := part == Day || part == Month
 
 	if cronPart == "" {
 		return timeSet, InvalidCronSchedule
