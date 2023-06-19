@@ -1,5 +1,5 @@
 # cron
-### A Speedy and Lightweight Cron Module
+### A Lightweight Cron Module
 
 ## Install
 ```
