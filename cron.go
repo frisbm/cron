@@ -8,12 +8,12 @@ import (
 Cron represents the cron schedule
 */
 type Cron struct {
-	minute    set[uint8]
-	hour      set[uint8]
-	day       set[uint8]
-	month     set[uint8]
-	dayOfWeek set[uint8]
-	utc       bool
+	minute  set[uint8]
+	hour    set[uint8]
+	day     set[uint8]
+	month   set[uint8]
+	weekday set[uint8]
+	utc     bool
 }
 
 /*
@@ -94,7 +94,7 @@ func (c *Cron) isTime(time time.Time) bool {
 		c.hour.contains(uint8(time.Hour())) &&
 		c.day.contains(uint8(time.Day())) &&
 		c.month.contains(uint8(time.Month())) &&
-		c.dayOfWeek.contains(uint8(time.Weekday())) {
+		c.weekday.contains(uint8(time.Weekday())) {
 		return true
 	}
 	return false

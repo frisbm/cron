@@ -56,7 +56,7 @@ func Parse(schedule string) (*Cron, error) {
 			case 3:
 				cron.month, err = parseCronPart(cronParts[i], 1, 12)
 			case 4:
-				cron.dayOfWeek, err = parseCronPart(cronParts[i], 0, 6)
+				cron.weekday, err = parseCronPart(cronParts[i], 0, 6)
 			}
 			if err != nil {
 				errCh <- err
